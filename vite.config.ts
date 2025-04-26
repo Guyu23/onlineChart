@@ -1,12 +1,14 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import Icons from 'unplugin-icons/vite'
+import tailwindcss from '@tailwindcss/vite'
 import { FileSystemIconLoader } from 'unplugin-icons/loaders'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
+    tailwindcss(),
     Icons({
       compiler: 'jsx', // 或 'vue' (取决于你的项目类型)
       autoInstall: true,
