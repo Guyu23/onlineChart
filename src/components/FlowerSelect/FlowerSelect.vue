@@ -62,14 +62,13 @@ const computedData = computed(() => {
     const option = {
       width: options.width,
       height: options.height,
-      delay: i * 0.2,
+      delay: 0,
       endAngle: startAngle - singleDeg * (dataLength - i - 1),
-      startAngle,
+      startAngle: startAngle,
       data: item,
       stopColor: ColorMap[i % colorMapLength],
       cutWidth: width
     }
-    console.log(option.stopColor)
 
     return option
   })

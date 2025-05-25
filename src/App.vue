@@ -7,7 +7,6 @@ import TheChart from '@/components/TheChart.vue'
 
 <template>
   <TheChart />
-
 </template>
 
 <style scoped></style>

@@ -75,9 +75,9 @@ const dateObj = reactive<{
 })
 
 const options = reactive<FlowerSelectOption>({
-    width: 120,
-    height: 40,
-    gap:25,
+    width:90,
+    height: 36,
+    gap:30,
     data: [
         {
             label: '一',
@@ -108,7 +108,7 @@ const options = reactive<FlowerSelectOption>({
 
 const left = ref(0)
 const top = ref(0)
-const width = ref(20)
+const width = ref(10)
 
 function showSelect(e: MouseEvent) {
     if (!showFlowerSelect.value) {

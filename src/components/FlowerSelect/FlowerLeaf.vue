@@ -16,7 +16,7 @@ const {
     label: '选项',
     value: '1',
   }, // 花瓣上的文字
-  fontSize = 16, // 字体大小
+  fontSize = 14, // 字体大小
 } = defineProps<{
   width: number;
   height: number;
@@ -69,7 +69,7 @@ const position = computed(() => {
 </script>
 
 <template>
-  <div class="flower-leaf"
+  <div class="flower-leaf cursor-pointer hover:scale-110 transition-all duration-300"
        :style>
     <svg>
       <path :d="position.d"
