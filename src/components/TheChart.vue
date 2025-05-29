@@ -1,4 +1,7 @@
-<script lang="ts" setup>
+<script
+    lang="ts"
+    setup
+>
 import { Icon } from '@iconify/vue';
 import { onBeforeMount, ref, useId, watch, reactive } from 'vue';
 import TheUser from './TheUser.vue';
@@ -6,7 +9,6 @@ import TheGrid from './TheGrid.vue';
 import FlowerSelect from './FlowerSelect';
 import type { FlowerSelectOption } from '@/types/flower';
 const START = ref(20)
-const days = ref(0)
 
 type CalendarType = 'month' | 'week' | 'day'
 
@@ -75,9 +77,9 @@ const dateObj = reactive<{
 })
 
 const options = reactive<FlowerSelectOption>({
-    width:90,
+    width: 90,
     height: 36,
-    gap:30,
+    gap: 30,
     data: [
         {
             label: '一',
@@ -111,6 +113,7 @@ const top = ref(0)
 const width = ref(10)
 
 function showSelect(e: MouseEvent) {
+    e.preventDefault()
     if (!showFlowerSelect.value) {
         const { clientX, clientY } = e
         left.value = clientX - width.value / 2
@@ -120,7 +123,6 @@ function showSelect(e: MouseEvent) {
 }
 
 watch(() => ({ ...dateObj }), (newVal) => {
-    console.log('change')
     currentDate.value.year = newVal.year
     currentDate.value.month = newVal.month
     currentDate.value.day = newVal.today.day
@@ -132,30 +134,83 @@ watch(() => ({ ...dateObj }), (newVal) => {
  * @param year 年份
  * @param month 月份
  * @param start 开始日
- * @returns number
+ * @returns { lastStart: number, lastEnd: number, curStart: number, curEnd: number, days: number }
  */
-function getDaysNum(year: number, month: number, start: number = 20): void | number {
+function getDaysCount(year: number, month: number, start: number = 20): void | { day: number, isCurMonth: boolean, workingDay: boolean }[] {
     if (start > 28) return
     const lastMonthDays = new Date(year, month, 0).getDate()
-    const curMonthDays = new Date(year, month + 1, 0).getDate()
+    const isCurMonthDays = new Date(year, month + 1, 0).getDate()
     const startWeekDay = new Date(year, month - 1, start).getDay()
-
     const padDays = startWeekDay > 0 ? startWeekDay - 1 : 6
-    return Math.ceil((lastMonthDays + curMonthDays + padDays + 1 - start) / 7) * 7
+
+    const lastStart = start - padDays
+    const lastEnd = lastMonthDays
+    const curStart = 1
+    const curEnd = isCurMonthDays
+    const days = Math.ceil((lastMonthDays + isCurMonthDays + padDays + 1 - start) / 7) * 7
+
+    let startDay = lastStart
+    let endDay = lastEnd
+    let minus = 0
+    let isCurMonth = false
+    let workingDay = false
+    return Array.from({ length: days }, (_, index) => {
+        let day = startDay + index - minus
+        if (day > endDay) {
+            day = startDay = curStart
+            endDay = curEnd
+            minus = index
+            isCurMonth = !isCurMonth
+        }
+        if (day === start) {
+            workingDay = !workingDay
+        }
+        return {
+            day,
+            isCurMonth,
+            workingDay
+        }
+    })
+
 }
 
 
-onBeforeMount(() => {
+const daysCount = ref<{ day: number, isCurMonth: boolean, workingDay: boolean }[]>([])
+
+function initDate() {
     const date = new Date();
     dateObj.year = date.getFullYear();
     dateObj.month = date.getMonth();
-    dateObj.lastMonth = date.getMonth() - 1;
+    dateObj.lastMonth = date.getMonth();
     dateObj.today.week = date.getDay();
     dateObj.today.day = date.getDate();
-    const daysNum = getDaysNum(dateObj.year, dateObj.month)
-    if (daysNum) {
-        days.value = daysNum
+}
+
+function setDaysCount(year: number, month: number) {
+    daysCount.value = getDaysCount(year, month)!
+}
+
+
+function handleMonth(type: 'prev' | 'next') {
+    if (type === 'prev') {
+        dateObj.month--
+    } else {
+        dateObj.month++
     }
+    if (dateObj.month < 0) {
+        dateObj.year--
+        dateObj.month = 11
+    }
+    if (dateObj.month > 11) {
+        dateObj.year++
+        dateObj.month = 0
+    }
+    setDaysCount(dateObj.year, dateObj.month)
+}
+
+onBeforeMount(() => {
+    initDate()
+    setDaysCount(dateObj.year, dateObj.month)
 })
 
 </script>
@@ -163,24 +218,33 @@ onBeforeMount(() => {
 <template>
     <header class="function mb-[1rem]">
         <div class="users flex gap-[10px]">
-            <TheUser v-for="user in users" :key="user.name" :user />
+            <TheUser v-for="user in users"
+                     :key="user.name"
+                     :user />
         </div>
     </header>
-    <main class="date-chart" @click='showSelect'>
+    <main class="date-chart"
+          @contextmenu='showSelect'
+          @click='showFlowerSelect = false'>
         <nav class="date-title">
             <div class="left">
                 <span class="text-[1.2rem] font-500 mr-2">
                     <span>{{ currentDate.year }} 年 </span>
-                    <span>{{ currentDate.month }} 月</span>
+                    <span>{{ currentDate.month + 1 }} 月</span>
                     <span v-if="calendarType === 'day'">{{ currentDate.day }} 日</span>
                 </span>
-                <button
-                    class="transition duration-300 cursor-pointer bg-white border border-gray-400 p-1 rounded-[4px] text-gray-400 hover:border-[#1677ff] hover:text-[#1677ff]">
-                    <Icon icon="fluent:triangle-left-20-regular" width="20" height="20" />
+                <button @click="handleMonth('prev')"
+                        class="transition duration-300 cursor-pointer bg-white border border-gray-400 p-1 rounded-[4px] text-gray-400 hover:border-[#1677ff] hover:text-[#1677ff]">
+                    <Icon icon="fluent:triangle-left-20-regular"
+                          width="20"
+                          height="20" />
                 </button>
-                <button
-                    class="transition ml-2 duration-300 cursor-pointer bg-white border border-gray-400 p-1 rounded-[4px] text-gray-400 hover:border-[#1677ff] hover:text-[#1677ff]">
-                    <Icon class="rotate-180" icon="fluent:triangle-left-20-regular" width="20" height="20" />
+                <button @click="handleMonth('next')"
+                        class="transition ml-2 duration-300 cursor-pointer bg-white border border-gray-400 p-1 rounded-[4px] text-gray-400 hover:border-[#1677ff] hover:text-[#1677ff]">
+                    <Icon class="rotate-180"
+                          icon="fluent:triangle-left-20-regular"
+                          width="20"
+                          height="20" />
                 </button>
             </div>
             <div class="right">
@@ -189,20 +253,32 @@ onBeforeMount(() => {
         </nav>
         <div class="week-title flex mt-[20px]">
             <div class="week-item flex-1 flex items-center justify-center h-[40px] font-bold"
-                v-for="item in ['一', '二', '三', '四', '五', '六', '日']" :key="item">
+                 v-for="item in ['一', '二', '三', '四', '五', '六', '日']"
+                 :key="item">
                 {{ item }}
             </div>
         </div>
         <div class="chart-body grid grid-cols-7 gap-[5px]">
-            <TheGrid v-for="item in days" :key="useId()" />
+            <TheGrid v-for="item in daysCount"
+                     :day="item.day"
+                     :isCurMonth="item.isCurMonth"
+                     :workingDay="item.workingDay"
+                     key="useId()" />
         </div>
         <teleport to="body">
-            <FlowerSelect v-model:show="showFlowerSelect" :options :left :top :width />
+            <FlowerSelect v-model:show="showFlowerSelect"
+                          :options
+                          :left
+                          :top
+                          :width />
         </teleport>
     </main>
 </template>
 
-<style scoped lang="scss">
+<style
+    scoped
+    lang="scss"
+>
 .date-chart {
     flex: 1;
     border: 1px solid #ccc;
@@ -225,6 +301,10 @@ onBeforeMount(() => {
             align-items: center;
             justify-content: space-between;
         }
+    }
+
+    span {
+        user-select: none;  
     }
 }
 </style>
